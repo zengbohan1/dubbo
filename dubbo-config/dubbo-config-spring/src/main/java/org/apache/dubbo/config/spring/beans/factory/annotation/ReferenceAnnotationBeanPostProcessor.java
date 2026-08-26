@@ -658,8 +658,7 @@ public class ReferenceAnnotationBeanPostProcessor extends AbstractAnnotationBean
 
     private String getReferenceBeanNamingStrategy() {
         if (applicationContext != null) {
-            String strategy =
-                    applicationContext.getEnvironment().getProperty(REFERENCE_BEAN_NAMING_STRATEGY_PROPERTY);
+            String strategy = applicationContext.getEnvironment().getProperty(REFERENCE_BEAN_NAMING_STRATEGY_PROPERTY);
             if (hasText(strategy)) {
                 return strategy.trim();
             }
