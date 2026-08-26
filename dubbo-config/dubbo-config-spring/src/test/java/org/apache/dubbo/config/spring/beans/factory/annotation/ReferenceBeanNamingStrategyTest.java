@@ -55,8 +55,7 @@ import org.springframework.core.env.MapPropertySource;
  */
 class ReferenceBeanNamingStrategyTest {
 
-    private static final String STRATEGY_PROPERTY_SOURCE_NAME =
-            ReferenceBeanNamingStrategyTest.class.getSimpleName();
+    private static final String STRATEGY_PROPERTY_SOURCE_NAME = ReferenceBeanNamingStrategyTest.class.getSimpleName();
 
     @BeforeAll
     public static void setUp() {
@@ -105,11 +104,9 @@ class ReferenceBeanNamingStrategyTest {
             ReferenceBeanManager referenceBeanManager = getReferenceBeanManager(context);
             Assertions.assertNotNull(referenceBeanManager.getById("DemoService"));
             Assertions.assertEquals(
-                    "DemoService",
-                    referenceBeanManager.getById("DemoService").getId());
+                    "DemoService", referenceBeanManager.getById("DemoService").getId());
             Assertions.assertEquals(
-                    "HelloService",
-                    referenceBeanManager.getById("HelloService").getId());
+                    "HelloService", referenceBeanManager.getById("HelloService").getId());
 
             Assertions.assertTrue(context.getBean("DemoService") instanceof DemoService);
             Assertions.assertTrue(context.getBean("HelloService") instanceof HelloService);
@@ -135,8 +132,7 @@ class ReferenceBeanNamingStrategyTest {
         if (namingStrategy != null) {
             Map<String, Object> properties = new HashMap<>();
             properties.put(
-                    ReferenceAnnotationBeanPostProcessor.REFERENCE_BEAN_NAMING_STRATEGY_PROPERTY,
-                    namingStrategy);
+                    ReferenceAnnotationBeanPostProcessor.REFERENCE_BEAN_NAMING_STRATEGY_PROPERTY, namingStrategy);
             context.getEnvironment()
                     .getPropertySources()
                     .addFirst(new MapPropertySource(STRATEGY_PROPERTY_SOURCE_NAME, properties));
@@ -148,8 +144,7 @@ class ReferenceBeanNamingStrategyTest {
 
     @Configuration
     @EnableDubbo(scanBasePackages = "org.apache.dubbo.config.spring.context.annotation.provider")
-    public static class EnableDubboConfiguration {
-    }
+    public static class EnableDubboConfiguration {}
 
     @Configuration
     public static class DubboConfiguration {
