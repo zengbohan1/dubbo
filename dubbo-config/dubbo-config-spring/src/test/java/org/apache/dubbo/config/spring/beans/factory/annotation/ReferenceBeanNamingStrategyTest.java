@@ -36,6 +36,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.env.MapPropertySource;
 
 /**
@@ -146,28 +147,35 @@ class ReferenceBeanNamingStrategyTest {
     @EnableDubbo(scanBasePackages = "org.apache.dubbo.config.spring.context.annotation.provider")
     public static class EnableDubboConfiguration {}
 
+    // The scanned provider package (org.apache.dubbo.config.spring.context.annotation.provider) contains
+    // Dubbo services whose @DubboService attributes are placeholders (${demo.service.application},
+    // ${demo.service.protocol}, ${demo.service.registry}, ${demo.service.version}), resolved from
+    // META-INF/default.properties as in ServiceAnnotationTestConfiguration of the reference tests.
+    // The bean ids below must match the resolved placeholder values so that the exported providers
+    // can look up the ApplicationConfig / RegistryConfig / ProtocolConfig entries defined here.
     @Configuration
+    @PropertySource("classpath:/META-INF/default.properties")
     public static class DubboConfiguration {
 
-        @Bean
+        @Bean("dubbo-demo-application")
         public ApplicationConfig applicationConfig() {
             ApplicationConfig applicationConfig = new ApplicationConfig();
-            applicationConfig.setName("reference-bean-naming-strategy-test");
+            applicationConfig.setName("dubbo-demo-application");
             return applicationConfig;
         }
 
-        @Bean
+        @Bean("my-registry")
         public RegistryConfig registryConfig() {
             RegistryConfig registryConfig = new RegistryConfig();
             registryConfig.setAddress("N/A");
             return registryConfig;
         }
 
-        @Bean
+        @Bean("dubbo")
         public ProtocolConfig protocolConfig() {
             ProtocolConfig protocolConfig = new ProtocolConfig();
             protocolConfig.setName("dubbo");
-            protocolConfig.setPort(20880);
+            protocolConfig.setPort(12345);
             return protocolConfig;
         }
     }
