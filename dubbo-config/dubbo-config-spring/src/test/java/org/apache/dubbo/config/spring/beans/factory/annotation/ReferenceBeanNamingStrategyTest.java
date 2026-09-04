@@ -26,6 +26,7 @@ import org.apache.dubbo.config.spring.api.HelloService;
 import org.apache.dubbo.config.spring.context.annotation.EnableDubbo;
 import org.apache.dubbo.config.spring.reference.ReferenceBeanManager;
 
+import java.lang.reflect.Member;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -118,6 +119,51 @@ class ReferenceBeanNamingStrategyTest {
         }
     }
 
+    @Test
+    void testUnsetStrategyWithoutApplicationContextFallsBackToFieldName() throws Exception {
+        // no application context on the processor: the default field-name strategy applies
+        ReferenceAnnotationBeanPostProcessor processor = new ReferenceAnnotationBeanPostProcessor();
+        Assertions.assertNull(processor.applicationContext);
+        Assertions.assertEquals(
+                "demoService",
+                processor.resolveDefaultReferenceBeanName("demoService", DemoService.class, consumerField()));
+    }
+
+    @Test
+    void testInterfaceNameStrategyFallsBackWhenSimpleNameUnavailable() throws Exception {
+        ReferenceAnnotationBeanPostProcessor processor =
+                processorWithStrategy(ReferenceAnnotationBeanPostProcessor.INTERFACE_NAME_NAMING_STRATEGY);
+        // an anonymous class has an empty simple name, so no bean name can be derived from it
+        Class<?> anonymousType = new Object() {}.getClass();
+        Assertions.assertEquals(
+                "demoService",
+                processor.resolveDefaultReferenceBeanName("demoService", anonymousType, consumerField()));
+    }
+
+    @Test
+    void testInterfaceNameStrategyFallsBackWhenInjectedTypeIsNull() throws Exception {
+        ReferenceAnnotationBeanPostProcessor processor =
+                processorWithStrategy(ReferenceAnnotationBeanPostProcessor.INTERFACE_NAME_NAMING_STRATEGY);
+        Assertions.assertEquals(
+                "demoService", processor.resolveDefaultReferenceBeanName("demoService", null, consumerField()));
+    }
+
+    @Test
+    void testStrategyPropertyIsTrimmedAndCaseInsensitive() throws Exception {
+        ReferenceAnnotationBeanPostProcessor processor = processorWithStrategy(" Interface-Name ");
+        Assertions.assertEquals(
+                "DemoService",
+                processor.resolveDefaultReferenceBeanName("demoService", DemoService.class, consumerField()));
+    }
+
+    @Test
+    void testBlankStrategyPropertyFallsBackToFieldName() throws Exception {
+        ReferenceAnnotationBeanPostProcessor processor = processorWithStrategy("   ");
+        Assertions.assertEquals(
+                "demoService",
+                processor.resolveDefaultReferenceBeanName("demoService", DemoService.class, consumerField()));
+    }
+
     private void assertConsumersInjected(AnnotationConfigApplicationContext context) {
         // creating the consumer beans triggers the @DubboReference injection of the proxies
         Assertions.assertNotNull(context.getBean(FirstConsumerBean.class).getDemoService());
@@ -126,6 +172,26 @@ class ReferenceBeanNamingStrategyTest {
 
     private ReferenceBeanManager getReferenceBeanManager(AnnotationConfigApplicationContext context) {
         return context.getBean(ReferenceBeanManager.BEAN_NAME, ReferenceBeanManager.class);
+    }
+
+    private ReferenceAnnotationBeanPostProcessor processorWithStrategy(String strategy) {
+        ReferenceAnnotationBeanPostProcessor processor = new ReferenceAnnotationBeanPostProcessor();
+        AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
+        if (strategy != null) {
+            Map<String, Object> properties = new HashMap<>();
+            properties.put(ReferenceAnnotationBeanPostProcessor.REFERENCE_BEAN_NAMING_STRATEGY_PROPERTY, strategy);
+            context.getEnvironment()
+                    .getPropertySources()
+                    .addFirst(new MapPropertySource(STRATEGY_PROPERTY_SOURCE_NAME, properties));
+        }
+        // the strategy lookup only reads the environment; assigning the protected field directly
+        // avoids pulling in the ReferenceBeanManager machinery of setApplicationContext
+        processor.applicationContext = context;
+        return processor;
+    }
+
+    private Member consumerField() throws NoSuchFieldException {
+        return FirstConsumerBean.class.getDeclaredField("demoService");
     }
 
     private AnnotationConfigApplicationContext buildContext(String namingStrategy) {
